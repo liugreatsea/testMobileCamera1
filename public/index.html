@@ -6,22 +6,77 @@
 </head>
 <body>
 
-<button onclick="swift()">clickMe</button>
-<input type="text" name="info" id ="info"></input>
-<video id="video" width="640" height="480" autoplay></video>
+<button onclick="swift()">Swift Camera</button>
 
+<span id="cameraInfo">Camera:Back</span>
+<input type="hidden" id="front"/>
+<div>
+  <canvas id="canvas" width="320" height="240">
+  </canvas>
+</div>
+<div>
+  <button id="snap" onclick="snap()">Snap Photo</button>
+</div>
+<canvas id="sc" width="320" height="240"></canvas>
+<div style="display: none">
+  <video id="video" width="320" height="240" autoplay>
 
-<button id="snap">Snap Photo</button>
-<canvas id="canvas" width="640" height="480"></canvas>
+  </video>
+</div>
 
 <script>
   var front = false;
+  document.getElementById('front').setAttribute("value",front);
+
+  var video = document.getElementById('video');
+  function drawCanvas() {
+
+    var canvas = document.getElementById('canvas');
+
+    var context = canvas.getContext("2d");
+
+    context.drawImage(video, 0, 0, 320, 240);
+    context.strokeStyle= 'red';
+    context.lineWidth = 5;
+    context.strokeRect(100,60,100,150);
+    setTimeout(drawCanvas, 30);
+  }
+
+
+
+  // Get access to the camera!
+  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    // Not adding `{ audio: true }` since we only want video now
+    navigator.mediaDevices.getUserMedia({ video:{facingMode:(front ? "user" : "environment")}}).then(function(stream) {
+      video.src = window.URL.createObjectURL(stream);
+      video.play();
+      drawCanvas();
+
+
+    });
+  }
+
+  function snap() {
+
+    var sc = document.getElementById('sc');
+    var scContext = sc.getContext("2d");
+    var video = document.getElementById('video');
+
+    scContext.drawImage(video,200,120,200,300,0,0,100,150);
+
+  }
 
   var swift = function(){
-    front=!front;
-    var showValue = front ? "front":"end";
+    front= document.getElementById('front').getAttribute("value");
+    if(front == "false"){
+      front=true;
+    }else{
+      front=false;
+    }
+    document.getElementById('front').setAttribute("value",front);
+    var showValue = front ? "Camera: Front":"Camera: Back";
 
-    document.getElementById("info").value = showValue;
+    document.getElementById("cameraInfo").innerHTML = showValue;
 
     if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       // Not adding `{ audio: true }` since we only want video now
@@ -33,46 +88,7 @@
   };
 
 
-  // Grab elements, create settings, etc.
-  var video = document.getElementById('video');
 
-  // Get access to the camera!
-  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    // Not adding `{ audio: true }` since we only want video now
-    navigator.mediaDevices.getUserMedia({ video:{facingMode:(front ? "user" : "environment")}}).then(function(stream) {
-      video.src = window.URL.createObjectURL(stream);
-      video.play();
-    });
-  }
-
-  /* Legacy code below: getUserMedia
-   else if(navigator.getUserMedia) { // Standard
-   navigator.getUserMedia({ video: true }, function(stream) {
-   video.src = stream;
-   video.play();
-   }, errBack);
-   } else if(navigator.webkitGetUserMedia) { // WebKit-prefixed
-   navigator.webkitGetUserMedia({ video: true }, function(stream){
-   video.src = window.webkitURL.createObjectURL(stream);
-   video.play();
-   }, errBack);
-   } else if(navigator.mozGetUserMedia) { // Mozilla-prefixed
-   navigator.mozGetUserMedia({ video: true }, function(stream){
-   video.src = window.URL.createObjectURL(stream);
-   video.play();
-   }, errBack);
-   }
-   */
-
-  // Elements for taking the snapshot
-  var canvas = document.getElementById('canvas');
-  var context = canvas.getContext('2d');
-  var video = document.getElementById('video');
-
-  // Trigger photo take
-  document.getElementById("snap").addEventListener("click", function() {
-    context.drawImage(video, 0, 0, 640, 480);
-  });
 </script>
 
 </body>
