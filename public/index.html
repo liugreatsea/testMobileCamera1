@@ -1,96 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Insert title here</title>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Cropper</title>
+  <link rel="stylesheet" href="cropper.css">
+  <style>
+    .container {
+      max-width: 960px;
+      margin: 20px auto;
+    }
+
+    img {
+      max-width: 100%;
+    }
+
+    .row,
+    .preview {
+      overflow: hidden;
+    }
+
+    .col {
+      float: left;
+    }
+
+    .col-6 {
+      width: 50%;
+    }
+
+    .col-3 {
+      width: 25%;
+    }
+
+    .col-2 {
+      width: 16.7%;
+    }
+
+    .col-1 {
+      width: 8.3%;
+    }
+  </style>
 </head>
 <body>
 
-<button onclick="swift()">Swift Camera</button>
+<div class="container">
+  <h1>Customize preview for Cropper</h1>
+  <h3>Cropper</h3>
+  <div class="row">
 
-<span id="cameraInfo">Camera:Back</span>
-<input type="hidden" id="front"/>
-<div>
-  <canvas id="canvas" width="320" height="240">
-  </canvas>
-</div>
-<div>
-  <button id="snap" onclick="snap()">Snap Photo</button>
-</div>
-<canvas id="sc" width="320" height="240"></canvas>
-<div style="display: none">
-  <video id="video" width="320" height="240" autoplay>
 
-  </video>
+
+    <div class="col col-6">
+      <p><img id="image"  style="height: 300px;width: 300px" alt=""></p>
+      <p><input type="file" accept="image/* ;capture=camera"  id="imgFile"> </p>
+      <p><canvas id="myCan" width="150" height="150"></canvas></p>
+      <p><button id="cut">裁剪文件</button></p>
+
+    </div>
+    <div class="col col-3">
+      <div class="preview"></div>
+    </div>
+    <div class="col col-2">
+      <div class="preview"></div>
+    </div>
+    <div class="col col-1">
+      <div class="preview"></div>
+    </div>
+  </div>
 </div>
 
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.1.1.slim.min.js"></script>
+<script src="cropper.js"></script>
 <script>
-  var front = false;
-  document.getElementById('front').setAttribute("value",front);
+  $('#image').change(function () {
+    var $previews = $('.preview');
 
-  var video = document.getElementById('video');
-  function drawCanvas() {
+    $('#image').cropper({
+      ready: function (e) {
+        var $clone = $(this).clone().removeClass('cropper-hidden');
 
-    var canvas = document.getElementById('canvas');
+        $clone.css({
+          display: 'block',
+          width: '100%',
+          minWidth: 0,
+          minHeight: 0,
+          maxWidth: 'none',
+          maxHeight: 'none'
+        });
 
-    var context = canvas.getContext("2d");
+        $previews.css({
+          width: '100%',
+          overflow: 'hidden'
+        }).html($clone);
+      },
 
-    context.drawImage(video, 0, 0, 320, 240);
-    context.strokeStyle= 'red';
+      crop: function (e) {
+        var imageData = $(this).cropper('getImageData');
+        var previewAspectRatio = e.width / e.height;
 
-    context.lineWidth = 5;
-    context.strokeRect(100,60,100,150);
-    setTimeout(drawCanvas, 30);
-  }
+        $previews.each(function () {
+          var $preview = $(this);
+          var previewWidth = $preview.width();
+          var previewHeight = previewWidth / previewAspectRatio;
+          var imageScaledRatio = e.width / previewWidth;
 
-
-
-  // Get access to the camera!
-  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    // Not adding `{ audio: true }` since we only want video now
-    navigator.mediaDevices.getUserMedia({ video:{facingMode:(front ? "user" : "environment")}}).then(function(stream) {
-      video.src = window.URL.createObjectURL(stream);
-      video.play();
-      drawCanvas();
-
-
+          $preview.height(previewHeight).find('img').css({
+            width: imageData.naturalWidth / imageScaledRatio,
+            height: imageData.naturalHeight / imageScaledRatio,
+            marginLeft: -e.x / imageScaledRatio,
+            marginTop: -e.y / imageScaledRatio
+          });
+        });
+      }
     });
-  }
+  });
 
-  function snap() {
+  $('#imgFile').change(function () {
+    var file=$('#imgFile')[0].files[0];
+    var reader=new FileReader();
+    reader.onload= function (e) {
+      $('#image').attr('src', e.target.result);
+    };
+    reader.readAsDataURL(file);
+  });
 
-    var sc = document.getElementById('sc');
-    var scContext = sc.getContext("2d");
-    var video = document.getElementById('video');
+  $('#cut').click(function () {
+    var $previews = $('.preview');
 
-    scContext.drawImage(video,200,120,200,300,0,0,100,150);
+    $('#image').cropper({
+      ready: function (e) {
+        var $clone = $(this).clone().removeClass('cropper-hidden');
 
-  }
+        $clone.css({
+          display: 'block',
+          width: '100%',
+          minWidth: 0,
+          minHeight: 0,
+          maxWidth: 'none',
+          maxHeight: 'none'
+        });
 
-  var swift = function(){
-    front= document.getElementById('front').getAttribute("value");
-    if(front == "false"){
-      front=true;
-    }else{
-      front=false;
-    }
-    document.getElementById('front').setAttribute("value",front);
-    var showValue = front ? "Camera: Front":"Camera: Back";
+        $previews.css({
+          width: '100%',
+          overflow: 'hidden'
+        }).html($clone);
+      },
 
-    document.getElementById("cameraInfo").innerHTML = showValue;
+      crop: function (e) {
+        var imageData = $(this).cropper('getImageData');
+        var previewAspectRatio = e.width / e.height;
 
-    if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      // Not adding `{ audio: true }` since we only want video now
-      navigator.mediaDevices.getUserMedia({ video:{facingMode:(front ? "user" : "environment")}}).then(function(stream) {
-        video.src = window.URL.createObjectURL(stream);
-        video.play();
-      });
-    }
-  };
+        $previews.each(function () {
+          var $preview = $(this);
+          var previewWidth = $preview.width();
+          var previewHeight = previewWidth / previewAspectRatio;
+          var imageScaledRatio = e.width / previewWidth;
 
-
-
+          $preview.height(previewHeight).find('img').css({
+            width: imageData.naturalWidth / imageScaledRatio,
+            height: imageData.naturalHeight / imageScaledRatio,
+            marginLeft: -e.x / imageScaledRatio,
+            marginTop: -e.y / imageScaledRatio
+          });
+        });
+      }
+    });
+  });
 </script>
-
 </body>
 </html>
